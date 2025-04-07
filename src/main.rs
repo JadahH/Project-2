@@ -7,7 +7,7 @@ fn main() {
         eprintln!("Error processing file: {}", err);
     }
 }
-
+/*
 fn insert(&mut self, size: usize, data: &[u8]) -> Option<usize> {
     let best_fit = self.free_blocks
         .iter_mut()
@@ -49,4 +49,4 @@ fn insert(&mut self, size: usize, data: &[u8]) -> Option<usize> {
         }
     }
     None
-}
+} */
