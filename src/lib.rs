@@ -41,25 +41,30 @@ impl MemoryManager {
         let best_fit = self
             .free_blocks
             .iter_mut()
-            .filter(|(block_size, _)| **block_size >= size)
-            .min_by_key(|(block_size, _)| **block_size);
+            .filter(|block| block.size >= size)
+            .min_by_key(|block| block.size);
 
-        if let Some((&block_size, blocks)) = best_fit {
-            if let Some(block) = blocks.pop() {
-                if blocks.is_empty() {
-                    self.free_blocks.remove(&block_size);
-                }
+        if let Some(block) = best_fit {
+            let new_id = self.next_id;
+            self.next_id += 1;
 
-                let new_id = self.next_id;
-                self.next_id += 1;
+            self.memory[block.start..block.start + size].copy_from_slice(&data);
 
-                self.memory[block.start..block.start + size].copy_from_slice(&data);
+            let allocated_block = MemoryBlock {
+                start: block.start,
+                size,
+                allocated: true,
+                id: Some(new_id),
+            };
+            self.allocated_blocks.insert(new_id, allocated_block);
 
-                let allocated_block = MemoryBlock {
-                    start: block.start,
-                    size,
-                    allocated: true,
-                    id: Some(new_id),
+            // Handle leftover memory in the block
+            if block.size > size {
+                let remaining_block = MemoryBlock {
+                    start: block.start + size,
+                    size: block.size - size,
+                    allocated: false,
+                    id: None,
                 };
                 self.allocated_blocks.insert(new_id, allocated_block);
 
