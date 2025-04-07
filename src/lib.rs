@@ -83,11 +83,25 @@ impl MemoryManager {
         None
     }
 
-    /* fn delete(&mut self, id: usize) {}
-    fn find(&self, id: usize) -> Option<&[u8]> {}
-    fn read(&self, id: usize) {}
-    fn update(&mut self, id: usize, new_data: &[u8]) {}
-    fn dump(&self) {} */
+    fn delete(&mut self, id: usize) {
+        todo!("Not Implemented")
+    }
+
+    fn find(&self, id: usize) -> Option<&[u8]> {
+        todo!("Not Implemented")
+    }
+
+    fn read(&self, id: usize) {
+        todo!("Not Implemented")
+    }
+
+    fn update(&mut self, id: usize, new_data: &[u8]) {
+        todo!("Not Implemented")
+    }
+
+    fn dump(&self) {
+        todo!("Not Implemented")
+    }
 
     /// The user requests a block of a given size `request` and the function will return the
     /// smallest power of 2 that is larger than the requested size.
