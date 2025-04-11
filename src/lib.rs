@@ -2,8 +2,18 @@ use std::collections::BTreeMap;
 
 pub mod proc;
 
+/// """Total size of the managed memory.
+///
+/// This constant defines the overall number of bytes available.
 const MEMORY_SIZE: usize = 65535; // Total memory size
 
+/// """Represents a block of memory managed by the MemoryManager.
+///
+/// Attributes:
+///     start (usize): The starting index of the memory block.
+///     size (usize): The size of the memory block in bytes.
+///     allocated (bool): Flag indicating if the block is currently allocated.
+///     id (Option<usize>): The unique identifier for the allocated block, if any.
 #[derive(Debug)]
 #[allow(dead_code)]
 struct MemoryBlock {
@@ -13,6 +23,17 @@ struct MemoryBlock {
     id: Option<usize>,
 }
 
+/// """Manages dynamic memory allocation using a best-fit strategy.
+///
+/// This structure maintains a fixed-size memory region, tracks free blocks in a BTreeMap keyed by block sizes,
+/// and tracks allocated blocks by their unique IDs. It supports inserting data, deletion of allocated blocks,
+/// reading, updating, and dumping the current memory state.
+///
+/// Attributes:
+///     memory ([u8; MEMORY_SIZE]): The underlying memory array.
+///     free_blocks (BTreeMap<usize, Vec<MemoryBlock>>): Maps block sizes to lists of free memory blocks.
+///     allocated_blocks (BTreeMap<usize, MemoryBlock>): Maps unique allocation IDs to their corresponding allocated blocks.
+///     next_id (usize): Next unique identifier for allocation.
 pub struct MemoryManager {
     memory: [u8; MEMORY_SIZE],
     free_blocks: BTreeMap<usize, Vec<MemoryBlock>>, // Map from block size to free blocks
@@ -21,6 +42,11 @@ pub struct MemoryManager {
 }
 
 impl MemoryManager {
+    /// """Creates a new MemoryManager instance with the entire memory available as a single free block.
+    ///
+    /// Returns:
+    ///     MemoryManager: A new instance with initialized memory and free block tracking.
+    /// """
     pub fn new() -> Self {
         let mut free_map = BTreeMap::new();
         free_map.insert(
@@ -41,8 +67,19 @@ impl MemoryManager {
         }
     }
 
-    /// Inserts data into memory using a best-fit allocation strategy.
-    /// Returns a unique ID if the allocation is successful.
+    /// """Inserts data into memory using a best-fit allocation strategy.
+    ///
+    /// This method searches for the smallest free memory block that can accommodate the requested size.
+    /// If a suitable block is found, it allocates the block, writes the data into memory,
+    /// and adjusts free block tracking accordingly.
+    ///
+    /// Args:
+    ///     size (usize): The number of bytes to allocate.
+    ///     data (&[u8]): A byte slice containing the data to be stored.
+    ///
+    /// Returns:
+    ///     Option<usize>: A unique allocation ID if the allocation is successful, or None if insufficient space is available.
+    /// """
     pub fn insert(&mut self, size: usize, data: &[u8]) -> Option<usize> {
         // Find the smallest free block (using BTreeMap range) that fits the requested size.
         let mut chosen_key = None;
@@ -106,7 +143,17 @@ impl MemoryManager {
         None
     }
 
-    /// Frees an allocated block by its unique ID.
+    /// """Frees an allocated memory block by its unique ID.
+    ///
+    /// This method removes the allocated block from the tracking map and re-adds it as a free block.
+    /// It prints an appropriate message based on whether the ID was found.
+    ///
+    /// Args:
+    ///     id (usize): The unique allocation ID of the block to be freed.
+    ///
+    /// Returns:
+    ///     None
+    /// """
     fn delete(&mut self, id: usize) {
         if let Some(block) = self.allocated_blocks.remove(&id) {
             // Create a free block from the allocated block.
@@ -126,14 +173,31 @@ impl MemoryManager {
         }
     }
 
-    /// Returns a slice of the data stored for the allocated block with the given ID.
+    /// """Finds the data associated with an allocated block by its unique ID.
+    ///
+    /// Args:
+    ///     id (usize): The unique allocation ID to look up.
+    ///
+    /// Returns:
+    ///     Option<&[u8]>: A slice of the data stored in the allocated block if found, or None otherwise.
+    /// """
     fn find(&self, id: usize) -> Option<&[u8]> {
         self.allocated_blocks.get(&id).map(|block| {
             &self.memory[block.start..block.start + block.size]
         })
     }
 
-    /// Reads and prints the allocated block's data by its unique ID.
+    /// """Reads and prints the data of an allocated block identified by its unique ID.
+    ///
+    /// This method attempts to locate the allocated block and, if found, prints its data; otherwise,
+    /// it prints an error message.
+    ///
+    /// Args:
+    ///     id (usize): The unique allocation ID whose data should be printed.
+    ///
+    /// Returns:
+    ///     None
+    /// """
     fn read(&self, id: usize) {
         match self.allocated_blocks.get(&id) {
             Some(block) => {
@@ -144,7 +208,17 @@ impl MemoryManager {
         }
     }
 
-    /// Updates the allocated block's data if the new data does not exceed the block size.
+    /// """Updates the data stored in an allocated block if the new data fits within the block.
+    ///
+    /// The update occurs only if the length of the new data does not exceed the current allocated block size.
+    ///
+    /// Args:
+    ///     id (usize): The unique allocation ID of the block to update.
+    ///     new_data (&[u8]): A byte slice containing the new data.
+    ///
+    /// Returns:
+    ///     None
+    /// """
     fn update(&mut self, id: usize, new_data: &[u8]) {
         if let Some(block) = self.allocated_blocks.get_mut(&id) {
             if new_data.len() <= block.size {
@@ -159,7 +233,14 @@ impl MemoryManager {
         }
     }
 
-    /// Dumps current free and allocated memory blocks.
+    /// """Dumps the current state of memory, listing free and allocated blocks.
+    ///
+    /// This method prints all free blocks with their starting addresses and sizes,
+    /// followed by details of the currently allocated blocks.
+    ///
+    /// Returns:
+    ///     None
+    /// """
     fn dump(&self) {
         println!("Memory Dump:");
         for (size, blocks) in &self.free_blocks {
@@ -173,15 +254,16 @@ impl MemoryManager {
     }
 }
 
-/// Returns the smallest power of two that is greater than or equal to the requested size.
+/// """Calculates the smallest power of two that is greater than or equal to a given request size.
 ///
-/// # Arguments
+/// This helper function is useful when ensuring that memory allocations are aligned or sized
+/// to the nearest power of two.
 ///
-/// * `request` - The size requested to be allocated.
+/// Args:
+///     request (usize): The requested allocation size.
 ///
-/// # Returns
-///
-/// The smallest power of two that will fit the requested size.
+/// Returns:
+///     usize: The smallest power of two that is greater than or equal to the request.
 fn next_largest(request: usize) -> usize {
     let mut power = 1;
     while power < request {
@@ -189,4 +271,3 @@ fn next_largest(request: usize) -> usize {
     }
     power
 }
-

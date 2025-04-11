@@ -1,6 +1,20 @@
 
 use memory_manager::MemoryManager;
 
+/// """Main entry point of the application.
+///
+/// This function creates a new instance of `MemoryManager`, defines the file path for the command file,
+/// and calls `process_file` to process the file. If an error occurs during processing, the error is printed
+/// to the standard error stream.
+///
+/// Note:
+///     The function `process_file` is assumed to be defined elsewhere and is responsible for file processing.
+///
+/// Returns:
+///     () -- This function does not return a value. It exits after execution.
+/// """
+
+
 fn main() {
     let mut memory_manager = MemoryManager::new();
     let file_path = "commands.cmmd";
